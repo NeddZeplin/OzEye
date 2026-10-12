@@ -627,7 +627,8 @@ test('Realtime sessions carry supplied tools, and the standalone voice adds the 
     GEV_REALTIME_TOOLS,
   );
   assert.ok(names.includes('get_weather'));
-  assert.ok(names.includes('military_awareness'));
+  assert.ok(names.includes('situation_brief'));
+  assert.ok(!names.includes('military_awareness'));
   assert.ok(!names.includes('show_in_gods_eye_view'));
   assert.ok(!names.includes('aircraft_in_area'));
   assert.ok(!names.includes('get_weather_map'));

@@ -8,9 +8,7 @@ import { defineTool, ToolError } from '../catalog.js';
 import {
   AREA_SCHEMA,
   POINT_SCHEMA,
-  areaCenter,
   areaContains,
-  distanceKm,
   polygonsTouchArea,
   resolveArea,
   resolvePoint,
@@ -18,7 +16,6 @@ import {
 import { LIMIT_SCHEMA, capRows, countNoun, isoTime } from '../results.js';
 
 const MAX_TERRAIN_POINTS = 20;
-const MAX_SITE_BOX_DEGREES = 10;
 const FEATURE_KINDS = {
   administrative_areas: 'getAdministrativeAreas',
   named_places: 'getEnclosingAreas',
@@ -350,115 +347,6 @@ export const getTerrainHeight = defineTool({
           ? `Ground elevation is ${first.elevation_m ?? 'unknown'} m at ${first.lat}, ${first.lon}.`
           : `Ground elevation at ${countNoun(rows.length, 'point')}.`,
       data: { points: rows },
-    };
-  },
-});
-
-const NAMES_WAIT_MS = 5000;
-
-/**
- * The value `promise` resolves to within `ms`, or null when it takes longer
- * or fails. Rejects only when `signal` aborts.
- */
-function settleWithin(promise, ms, signal) {
-  signal?.throwIfAborted();
-  return new Promise((resolve, reject) => {
-    const done = (value) => {
-      clearTimeout(timer);
-      signal?.removeEventListener('abort', abort);
-      resolve(value);
-    };
-    const abort = () => {
-      clearTimeout(timer);
-      reject(signal.reason);
-    };
-    const timer = setTimeout(() => done(null), ms);
-    signal?.addEventListener('abort', abort, { once: true });
-    Promise.resolve(promise).then(
-      (value) => done(value ?? null),
-      () => done(null),
-    );
-  });
-}
-
-export const findMilitaryInstallations = defineTool({
-  name: 'find_military_installations',
-  title: 'Military installations',
-  description:
-    'Military installations mapped in OpenStreetMap within an area of at ' +
-    `most ${MAX_SITE_BOX_DEGREES}° on each side, nearest the center first.`,
-  inputSchema: {
-    type: 'object',
-    properties: { area: AREA_SCHEMA, limit: LIMIT_SCHEMA },
-    required: ['area'],
-    additionalProperties: false,
-  },
-  requires: ['installations'],
-  async run(args, { services, signal }) {
-    const area = await resolveArea(args.area, { services, signal });
-    if (
-      area.west > area.east ||
-      area.north - area.south > MAX_SITE_BOX_DEGREES ||
-      area.east - area.west > MAX_SITE_BOX_DEGREES
-    )
-      throw new ToolError(
-        'invalid_arguments',
-        `The area must be at most ${MAX_SITE_BOX_DEGREES}° on each side and not cross the antimeridian`,
-      );
-    const center = areaCenter(area);
-    let result = await services.installations.getMappedSites(area, {
-      exact: true,
-      thinned: false,
-      signal,
-    });
-    // Tile results can arrive before the name pack; wait briefly for the
-    // named version rather than answer with generic names.
-    let namesPending = false;
-    if (result.enrichment) {
-      const named = await settleWithin(
-        result.enrichment,
-        NAMES_WAIT_MS,
-        signal,
-      );
-      if (named) result = named;
-      else namesPending = true;
-    }
-    // A saturated source returned only part of the mapped sites.
-    const complete = !result.saturated;
-    const rows = (result.records || [])
-      .map((site) => ({
-        site,
-        point: { lat: site.latitude, lon: site.longitude },
-      }))
-      .filter(({ point }) => areaContains(area, point))
-      .map(({ site, point }) => ({
-        id: site.id,
-        name: site.name ?? null,
-        kind: site.kind ?? null,
-        class: site.class ?? null,
-        lat: round(point.lat, 5),
-        lon: round(point.lon, 5),
-        distance_km: round(distanceKm(center, point), 1),
-      }))
-      .sort((a, b) => a.distance_km - b.distance_km);
-    const notes = [
-      ...(complete ? [] : ['partial: the source returned only some sites']),
-      ...(namesPending ? ['site names are still loading'] : []),
-    ];
-    return {
-      summary:
-        `${countNoun(rows.length, 'mapped military installation')} in ${area.label}` +
-        (notes.length ? ` (${notes.join('; ')}).` : '.'),
-      data: {
-        view: suggestView(services, {
-          area,
-          layers: ['military-installations'],
-        }),
-        ...capRows(rows, args.limit),
-        complete,
-        names_pending: namesPending,
-        source: result.source ?? null,
-      },
     };
   },
 });

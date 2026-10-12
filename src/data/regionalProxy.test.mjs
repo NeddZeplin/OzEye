@@ -48,13 +48,15 @@ test('new data proxies install the same routes in dev and preview servers', () =
   const byName = new Map(config.plugins.map((plugin) => [plugin.name, plugin]));
   for (const name of [
     'rocket-launches-proxy',
-    'military-installations-proxy',
     'regional-brief-proxy',
     'weather-effects-proxy',
   ]) {
     assert.equal(typeof byName.get(name)?.configureServer, 'function', `${name} dev hook`);
     assert.equal(typeof byName.get(name)?.configurePreviewServer, 'function', `${name} preview hook`);
   }
+  // OzEye is civilian-only: the military providers are never mounted.
+  for (const name of ['military-installations-proxy', 'adsblol-proxy'])
+    assert.equal(byName.has(name), false, `${name} must not be installed`);
 });
 
 test('Launch Library uses a 15-minute cache and optional server-side token header', () => {

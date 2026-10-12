@@ -5,6 +5,8 @@ import { Readable } from 'node:stream';
 import { coalesceProxyRequest, readResponseTextCapped } from './common/http.js';
 import { isLocalIpv4, parseTapAddress } from '../../src/data/tapAddress.js';
 import { normalizeDump1090Aircraft } from '../../src/sources/adsbRecords.js';
+import { isMilitaryAdsbRecord } from '../../src/sources/civilianTraffic.js';
+import { isMilitaryAircraft } from './common/civilian.js';
 
 /**
  * Local decoder feeds for the Local ADS-B layer.
@@ -382,9 +384,18 @@ async function readFeed(
   log(feed, status);
   // Anchor record ages at the document time so a stale feed ages out
   // naturally, without trusting a receiver clock that runs ahead of ours.
-  const records = normalizeDump1090Aircraft(json, receivedAt - ageMs, {
-    band: feed.band,
-  });
+  const records = normalizeDump1090Aircraft(
+    Array.isArray(json.aircraft)
+      ? {
+          ...json,
+          aircraft: json.aircraft.filter(
+            (aircraft) => !isMilitaryAdsbRecord(aircraft),
+          ),
+        }
+      : json,
+    receivedAt - ageMs,
+    { band: feed.band },
+  ).filter((record) => !isMilitaryAircraft(record.icao));
   return {
     status: { ...summary, status, aircraft: records.length, ageMs },
     records,

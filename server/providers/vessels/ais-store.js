@@ -1,4 +1,5 @@
 import { isRecognizedAisEnvelope } from '../../../src/data/aisStreamAdapter.js';
+import { isNavalVessel } from '../../../src/sources/civilianTraffic.js';
 export const AISSTREAM_CACHE_MAX = 50000;
 export const AISSTREAM_STALE_MS = 30 * 60 * 1000;
 // Per-MMSI recent-path ring buffers (PRD WS-F F3). Float32 lat/lon (~1m
@@ -16,6 +17,19 @@ const _aisStreamStatic = new Map();
 const _aisStreamTracks = new Map();
 /** @type {Map<string,{lat:number,lon:number,epochSec:number}>} mmsi -> first fix awaiting second (lazy buffer allocation) */
 const _aisStreamTrackPending = new Map();
+/** @type {Set<string>} MMSIs that identified as naval; never stored or served. */
+const _aisNavalMmsis = new Set();
+const AIS_NAVAL_MMSI_MAX = 20000;
+
+/** Withhold a naval vessel: forget what was stored and refuse later reports. */
+function withholdNavalVessel(mmsi) {
+  if (_aisNavalMmsis.size >= AIS_NAVAL_MMSI_MAX) _aisNavalMmsis.clear();
+  _aisNavalMmsis.add(mmsi);
+  _aisStreamVessels.delete(mmsi);
+  _aisStreamStatic.delete(mmsi);
+  _aisStreamTracks.delete(mmsi);
+  _aisStreamTrackPending.delete(mmsi);
+}
 
 /**
  * Store one parsed AIS envelope.
@@ -41,6 +55,18 @@ export function ingestAisStreamEnvelope(envelope) {
     metadata.MMSI ?? message.UserID ?? message.UserId ?? message.Mmsi,
   );
   if (!mmsi) return false;
+  // A naval report is still the feed delivering AIS traffic, so it counts
+  // as liveness; it is simply never stored.
+  if (_aisNavalMmsis.has(mmsi)) return true;
+  if (
+    isNavalVessel({
+      type: vesselTypeFromAis(message, _aisStreamStatic.get(mmsi)),
+      name: vesselNameFromAis(metadata, message, _aisStreamStatic.get(mmsi)),
+    })
+  ) {
+    withholdNavalVessel(mmsi);
+    return true;
+  }
 
   if (messageType === 'ShipStaticData' || messageType === 'StaticDataReport') {
     const staticData = {

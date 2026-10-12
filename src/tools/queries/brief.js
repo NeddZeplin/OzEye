@@ -3,17 +3,9 @@
 import { suggestView } from '../views.js';
 import { feedProvenanceEnvelope } from '../../data/layerSnapshot.js';
 import { defineTool, ToolError } from '../catalog.js';
-import {
-  AREA_SCHEMA,
-  POINT_SCHEMA,
-  areaCenter,
-  resolveArea,
-  resolvePoint,
-} from '../area.js';
+import { AREA_SCHEMA, areaCenter, resolveArea } from '../area.js';
 
 const SECTION_LIMIT = 5;
-const AWARENESS_LIMIT = 10;
-const AWARENESS_RADIUS_KM = 250;
 
 /** Brief sections: the tool each one calls and the arguments it passes. */
 const SECTIONS = [
@@ -61,34 +53,6 @@ const SECTIONS = [
     label: 'Tropical cyclones',
     tool: 'get_cyclones',
     args: (area) => ({ area: area.argument }),
-  },
-];
-
-/** Military contacts around a point, as the app's military awareness panel. */
-const AWARENESS_SECTIONS = [
-  {
-    key: 'military_aircraft',
-    tool: 'aircraft_in_area',
-    args: (area) => ({
-      area: area.argument,
-      military: true,
-      limit: AWARENESS_LIMIT,
-    }),
-  },
-  {
-    key: 'aircraft',
-    tool: 'aircraft_in_area',
-    args: (area) => ({ area: area.argument, limit: AWARENESS_LIMIT }),
-  },
-  {
-    key: 'vessels',
-    tool: 'vessels_in_area',
-    args: (area) => ({ area: area.argument, limit: AWARENESS_LIMIT }),
-  },
-  {
-    key: 'installations',
-    tool: 'find_military_installations',
-    args: (area) => ({ area: area.argument, limit: AWARENESS_LIMIT }),
   },
 ];
 
@@ -254,52 +218,6 @@ export const getHudCaption = defineTool({
     return {
       summary: caption,
       data: { area: area.label, caption },
-    };
-  },
-});
-
-export const militaryAwareness = defineTool({
-  name: 'military_awareness',
-  title: 'Military awareness',
-  description:
-    'Military contacts around a location, as the military awareness panel ' +
-    'shows them: military aircraft, other aircraft, ships and mapped ' +
-    `military installations within ${AWARENESS_RADIUS_KM} km by default, ` +
-    'each nearest first. Sections that are unavailable are marked as such.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      location: POINT_SCHEMA,
-      radius_km: { type: 'number', minimum: 1, maximum: AWARENESS_RADIUS_KM },
-    },
-    required: ['location'],
-    additionalProperties: false,
-  },
-  requires: ['military'],
-  async run(args, { services, signal, tools }) {
-    const point = await resolvePoint(args.location, { services, signal });
-    const radiusKm = args.radius_km ?? AWARENESS_RADIUS_KM;
-    const area = sectionArea(
-      await resolveArea(
-        { lat: point.lat, lon: point.lon, radius_km: radiusKm },
-        { services, signal },
-      ),
-    );
-    const { answers, lines } = await runSections(AWARENESS_SECTIONS, area, {
-      tools,
-      signal,
-    });
-    return {
-      summary: `Military awareness within ${radiusKm} km of ${point.label}: ${lines.join(' ')}`,
-      data: {
-        view: suggestView(services, {
-          area,
-          layers: ['military', 'ais-live-vessels', 'military-installations'],
-        }),
-        location: point,
-        radius_km: radiusKm,
-        sections: answers,
-      },
     };
   },
 });

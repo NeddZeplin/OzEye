@@ -78,8 +78,14 @@ test('OpenSky state and track routes share tokens, retain cache and use regional
       return Response.json({ access_token: 'fixture-token', expires_in: 1800 });
     if (url.includes('/states/')) {
       assert.equal(options.headers.Authorization, 'Bearer fixture-token');
-      return Response.json({ time: Math.floor(now / 1000), states: [] });
+      return Response.json({
+        time: Math.floor(now / 1000),
+        states: [['abc123'], ['7cf801'], ['a0f00d']],
+      });
     }
+    // The civilian filter's listed military addresses.
+    if (url.includes('/v2/mil'))
+      return Response.json({ ac: [{ hex: 'a0f00d' }] });
     if (url.includes('/tracks/')) {
       assert.equal(options.headers.Authorization, 'Bearer fixture-token');
       return Response.json({ path: [] });
@@ -92,17 +98,15 @@ test('OpenSky state and track routes share tokens, retain cache and use regional
     throw Error(`Unexpected URL: ${url}`);
   });
   const states = install(providers.openSkyProxy());
-  assert.equal(
-    (await states('/api/flights', '?lat=30&lon=-97')).statusCode,
-    200,
-  );
-  assert.equal(
-    (await states('/api/flights', '?lat=30&lon=-97')).headers[
-      'x-opensky-cache'
-    ],
-    'HIT',
-  );
-  assert.equal(calls.length, 2);
+  const first = await states('/api/flights', '?lat=30&lon=-97');
+  assert.equal(first.statusCode, 200);
+  // Military aircraft never leave the server: one is withheld by its
+  // reserved address block, one by the listed addresses.
+  assert.deepEqual(JSON.parse(first.body).states, [['abc123']]);
+  const cached = await states('/api/flights', '?lat=30&lon=-97');
+  assert.equal(cached.headers['x-opensky-cache'], 'HIT');
+  assert.deepEqual(JSON.parse(cached.body).states, [['abc123']]);
+  assert.equal(calls.filter((call) => !call.url.includes('/v2/mil')).length, 2);
   const tracks = install(providers.trackBackfillProxies(), true);
   assert.equal(
     (await tracks('/api/flights/track', '?icao24=ABC123')).statusCode,
@@ -111,17 +115,28 @@ test('OpenSky state and track routes share tokens, retain cache and use regional
   await tracks('/api/flights/track', '?icao24=abc123');
   assert.equal(calls.filter((call) => call.url.includes('/token')).length, 1);
   assert.equal(calls.filter((call) => call.url.includes('/tracks/')).length, 1);
+  // A military aircraft has no track, and no upstream request is made.
   assert.equal(
-    (await tracks('/api/military/track', '?hex=invalid')).statusCode,
-    400,
+    (await tracks('/api/flights/track', '?icao24=7cf801')).statusCode,
+    404,
+  );
+  assert.equal(calls.filter((call) => call.url.includes('/tracks/')).length, 1);
+  await assert.rejects(
+    tracks('/api/military/track', '?hex=7cf801'),
+    /registered route/,
   );
   now += 130_000;
   t.mock.method(globalThis, 'fetch', async (url) => {
     if (url.includes('/states/')) return new Response('', { status: 503 });
+    if (url.includes('/v2/mil')) return Response.json({ ac: [] });
     if (url.includes('/lat/'))
       return Response.json({
         now: now / 1000,
-        ac: [{ hex: 'abc123', lat: 30, lon: -97, alt_baro: 10000 }],
+        ac: [
+          { hex: 'abc123', lat: 30, lon: -97, alt_baro: 10000 },
+          { hex: 'a1b2c3', lat: 30, lon: -97, alt_baro: 10000, dbFlags: 1 },
+          { hex: '7cf802', lat: 30, lon: -97, alt_baro: 10000 },
+        ],
       });
     throw Error(`Unexpected URL: ${url}`);
   });
@@ -136,7 +151,11 @@ test('OpenSky state and track routes share tokens, retain cache and use regional
   );
   assert.equal(fallback.statusCode, 200);
   assert.equal(fallback.headers['x-flight-source'], 'adsb.lol');
-  assert.equal(JSON.parse(fallback.body).states[0][0], 'abc123');
+  // The regional fallback is filtered too, by database flag and by block.
+  assert.deepEqual(
+    JSON.parse(fallback.body).states.map((state) => state[0]),
+    ['abc123'],
+  );
 });
 
 test('OpenSky global snapshot attempts are time-limited, retried once, then fall back', async (t) => {

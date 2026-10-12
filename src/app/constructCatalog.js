@@ -25,12 +25,25 @@ import { createApplicationAwareness } from './layers/militaryAwareness.js';
 import { createApplicationFirms } from './layers/firms.js';
 import { createApplicationEarthquakes } from './layers/earthquakes.js';
 import { createApplicationFirePerimeters } from './layers/perimeters.js';
-import { createApplicationCables } from './layers/submarineCables.js';
 import { createApplicationStreetLevel } from './layers/streetLevel.js';
 import { createInfrastructureLayers } from '../data/infrastructure.js';
 import { localGeoJsonServices } from './localGeojsonServices.js';
 import { createBhoteKoshiEventLayer } from '../data/bhoteKoshiEvent.js';
 import { createBhoteKoshiLocatorLayer } from '../data/bhoteKoshiLocator.js';
+
+/**
+ * OzEye is civilian-only. A withheld layer keeps its catalog identity, so
+ * saved and shared state still decodes, but reports unavailable and so is
+ * refused by the visibility lifecycle before it initializes or loads data.
+ */
+function withheldLayer(layer) {
+  layer.getSourceAvailability = () => ({
+    available: false,
+    source: layer.id,
+    reason: `${layer.name || layer.id}: not available in OzEye`,
+  });
+  return layer;
+}
 
 /**
  * Hardware-local layers are registered like any other but never enter share
@@ -160,8 +173,7 @@ export function createApplicationCatalog({
           clock: weatherClock,
         }),
         createCyclonesLayer({ feed: sources.cyclones }),
-        ...createInfrastructureLayers(localGeoJsonServices),
-        createApplicationCables({ source: sources.cables }),
+        ...createInfrastructureLayers(localGeoJsonServices).map(withheldLayer),
         createApplicationFirms({
           surface,
           id: 'local-firms',

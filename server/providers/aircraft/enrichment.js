@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { promises as fsp } from 'node:fs';
+import { isMilitaryAircraft } from '../common/civilian.js';
 /**
  * adsbdb.com enrichment proxy: callsign → route (airline + origin/destination
  * airports) and hex → aircraft type/registration. Free community API — cached
@@ -129,6 +130,7 @@ export function adsbdbProxy() {
           const hex = String(rawKey || '').toLowerCase();
           if (!/^[0-9a-f]{6}$/.test(hex))
             return send(400, { error: 'invalid hex' });
+          if (isMilitaryAircraft(hex)) return send(200, { found: false });
           const data = await lookup('aircraft', hex);
           return send(200, data ? { found: true, ...data } : { found: false });
         }

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { readResponseTextCapped, coalesceProxyRequest } from './sources/httpBody.js';
+import { isMilitaryAircraft } from '../server/providers/common/civilian.js';
 
 const source = ['local.js', 'common/http.js', 'aircraft/enrichment.js', 'terrain.js', 'space/celestrak.js', 'space/launch-library.js', '../../src/data/spaceProviderRequests.js']
   .map(file => readFileSync(new URL(`../server/providers/${file}`, import.meta.url), 'utf8'))
@@ -21,7 +22,7 @@ function extract(name) {
 function fixture(name, overrides = {}, preview = false) {
   const logs = [];
   const deps = {
-    readResponseTextCapped, coalesceProxyRequest,
+    readResponseTextCapped, coalesceProxyRequest, isMilitaryAircraft,
     path, process: { cwd: () => '/fixture', env: {} },
     fsp: {
       readFile: async () => { throw new Error('cache absent'); },
@@ -171,4 +172,9 @@ test('ADSBDB retains validation and missing-aircraft semantics', async () => {
   const absent = await app.request('/type/abcdef');
   assert.equal(absent.status, 200);
   assert.deepEqual(JSON.parse(absent.body), { found: false });
+  // A military address answers "not found" without an upstream request.
+  const withheld = fixture('adsbdbProxy', { fetch: async () => { throw new Error('must not fetch'); } });
+  const military = await withheld.request('/type/7cf801');
+  assert.equal(military.status, 200);
+  assert.deepEqual(JSON.parse(military.body), { found: false });
 });

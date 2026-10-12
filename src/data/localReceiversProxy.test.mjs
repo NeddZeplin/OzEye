@@ -157,29 +157,31 @@ test('live feeds are read in parallel and labelled with their band', async () =>
       band: '1090',
       label: '1090 MHz',
       status: 'live',
-      aircraft: 4,
+      aircraft: 3,
       ageMs: 2_000,
     },
     {
       band: '978',
       label: '978 MHz UAT',
       status: 'live',
-      aircraft: 4,
+      aircraft: 3,
       ageMs: 2_000,
     },
   ]);
-  assert.equal(json.records.length, 8);
-  const shinr = json.records.filter((record) => record.icao === 'ae5d8a');
+  // The fixture's military aircraft (ae5d8a) is withheld from both bands.
+  assert.equal(json.records.length, 6);
+  assert.equal(
+    json.records.some((record) => record.icao === 'ae5d8a'),
+    false,
+  );
+  const civil = json.records.filter((record) => record.icao === 'a15c54');
   assert.deepEqual(
-    shinr.map(({ band, source }) => ({ band, source })),
+    civil.map(({ band, source }) => ({ band, source })),
     [
       { band: '1090', source: 'feed' },
       { band: '978', source: 'feed' },
     ],
   );
-  // Ages are anchored at the feed's own `now`.
-  assert.equal(shinr[0].lastPositionAt, FIXTURE_NOW_MS - 34_600);
-  assert.equal(shinr[0].lat, 30.269662);
 });
 
 test('a feed whose own now is over 10 s old is stale; failures are unreachable', async () => {
@@ -224,7 +226,7 @@ test('a feed whose own now is over 10 s old is stale; failures are unreachable',
     ],
   );
   assert.equal(json.feeds[0].ageMs, 10_001);
-  assert.equal(json.records.length, 4, 'stale feed records still flow');
+  assert.equal(json.records.length, 3, 'stale feed records still flow');
   for (const secret of ['ECONNREFUSED', 'secret', 'internal detail', '169.254'])
     assert.equal(body.includes(secret), false, `${secret} leaked`);
   assert.equal(

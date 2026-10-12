@@ -4,6 +4,8 @@ import { describeError } from './standalone/errors.js';
 const application = createStandaloneApplication({
   googleApiKey: import.meta.env.GOOGLE_MAPS_API_KEY,
   cesiumToken: import.meta.env.CESIUM_ION_TOKEN,
+  // OzEye is civilian-only: these feeds are never constructed or requested.
+  sources: { military: null, installations: null },
   allowQaRegistration: import.meta.env.DEV,
 });
 

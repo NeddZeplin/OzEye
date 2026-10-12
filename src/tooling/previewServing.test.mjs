@@ -99,7 +99,10 @@ test('real dev and built-preview servers serve provider JSON and terminate unkno
     try {
       for (const [route, status] of [
         ['/api/flights', 200],
-        ['/api/military', 200],
+        // OzEye is civilian-only: the military routes are not registered.
+        ['/api/military', 404],
+        ['/api/military/track?hex=7cf801', 404],
+        ['/api/military-installations', 404],
         ['/api/adsbdb/type/invalid', 400],
         ['/api/firms/status', 200],
         ['/api/fire-perimeters/inciweb/publication/invalid', 400],

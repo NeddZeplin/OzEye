@@ -4,6 +4,11 @@ import {
   readResponseJsonCapped,
 } from '../common/http.js';
 import { requiredFiniteQueryNumber } from '../common/query.js';
+import {
+  civilianAdsbPayload,
+  civilianStatesBody,
+  prepareCivilianFilter,
+} from '../common/civilian.js';
 // ---------------------------------------------------------------------------
 // OpenSky OAuth2 token + response cache state
 // ---------------------------------------------------------------------------
@@ -301,7 +306,9 @@ async function fetchAdsbLolPointFallback(req) {
           upstream,
           ADSBLOL_POINT_MAX_RESPONSE_BYTES,
         );
-        const normalized = normalizeAdsbLolPointResponse(payload);
+        const normalized = normalizeAdsbLolPointResponse(
+          civilianAdsbPayload(payload),
+        );
         const record = {
           body: JSON.stringify(normalized),
           cachedAt: Date.now(),
@@ -343,7 +350,7 @@ async function serveAdsbLolPointFallback(req, res, requestedMode, reason) {
     'X-Flight-Coverage': `${ADSBLOL_POINT_RADIUS_NM}nm regional fallback`,
     'X-Flight-Count': String(fallback.count),
   });
-  res.end(fallback.body);
+  res.end(civilianStatesBody(fallback.body));
   return true;
 }
 
@@ -386,6 +393,9 @@ export function openSkyProxy() {
         if (new URL(req.url || '/', 'http://localhost').pathname !== '/')
           return next();
         res.setHeader('X-Feed-Source', 'OpenSky Network');
+        // Cached bodies are filtered as they are served, because the listed
+        // military addresses keep growing after a body was cached.
+        await prepareCivilianFilter();
         const requestedMode = normalizeOpenSkyAuthMode(
           process.env.OPENSKY_AUTH_MODE,
         );
@@ -432,7 +442,7 @@ export function openSkyProxy() {
                 : undefined,
             }),
           );
-          res.end(_openskyCacheBody);
+          res.end(civilianStatesBody(_openskyCacheBody));
           return;
         }
         // Cooling down with nothing cached (cold start into a rate limit):
@@ -571,7 +581,7 @@ export function openSkyProxy() {
                 retryAfterSeconds: cooldownMs / 1000,
               }),
             );
-            res.end(_openskyCacheBody);
+            res.end(civilianStatesBody(_openskyCacheBody));
             return;
           }
         }
@@ -672,7 +682,7 @@ export function openSkyProxy() {
             reason,
           }),
         );
-        res.end(body);
+        res.end(civilianStatesBody(body));
       } catch (e) {
         console.error('[OpenSky Proxy]', e.message);
         if (_openskyCacheBody) {
@@ -693,7 +703,7 @@ export function openSkyProxy() {
               reason: cachedMeta.reason || 'cached_stale',
             }),
           );
-          res.end(_openskyCacheBody);
+          res.end(civilianStatesBody(_openskyCacheBody));
           return;
         }
         const requestedMode = normalizeOpenSkyAuthMode(

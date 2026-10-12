@@ -35,7 +35,15 @@ test('each surface offers the tools the table does not turn off', () => {
     assert.ok(!mcp.includes(name), name);
   const voice = names(toolsForSurface(coreTools, 'voice'));
   assert.ok(voice.includes('get_weather'));
-  assert.ok(voice.includes('military_awareness'));
+  assert.ok(voice.includes('situation_brief'));
+  // OzEye is civilian-only: these queries are not in the catalog at all.
+  for (const name of [
+    'military_awareness',
+    'find_military_installations',
+    'find_submarine_cables',
+    'find_infrastructure',
+  ])
+    assert.ok(!names(coreTools).includes(name), name);
   assert.ok(!voice.includes('aircraft_in_area'));
 });
 

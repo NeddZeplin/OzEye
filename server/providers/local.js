@@ -5,7 +5,6 @@ import { firmsProxy } from './firms.js';
 import { terrainHeightsProxy } from './terrain.js';
 import { adsbdbProxy } from './aircraft/enrichment.js';
 import { overpassProxy } from './overpass.js';
-import { militaryInstallationsProxy } from './military-installations.js';
 import { regionalBriefProxy } from './regional/briefing.js';
 import { geocodeProxy } from './regional/place.js';
 import { weatherEffectsProxy } from './regional/weather-effects.js';
@@ -15,7 +14,6 @@ import { radioBrowserProxy } from './radio.js';
 import { gbfsProxy } from './gbfs.js';
 import { localReceiversProxy } from './local-receivers.js';
 import { transitProxy } from './transit.js';
-import { adsbLolProxy } from './aircraft/adsb-lol.js';
 import { aisLiveProxy } from './vessels/ais-live.js';
 import { trackBackfillProxies } from './aircraft/tracks.js';
 import { openAiRealtimeProxy } from './openai.js';
@@ -41,7 +39,6 @@ function localProviderPlugins({ realtime } = {}) {
     terrainHeightsProxy(),
     adsbdbProxy(),
     overpassProxy(),
-    militaryInstallationsProxy(),
     regionalBriefProxy(),
     geocodeProxy(),
     weatherEffectsProxy(),
@@ -50,7 +47,6 @@ function localProviderPlugins({ realtime } = {}) {
     gbfsProxy(),
     localReceiversProxy(),
     transitProxy(),
-    adsbLolProxy(),
     aisLiveProxy(),
     trackBackfillProxies(),
     openAiRealtimeProxy({ realtime }),

@@ -15,11 +15,9 @@ import { createCctvSource } from '../layers/cctv/source.js';
 import { createCycloneSource } from '../layers/cyclones/source.js';
 import { createUsgsEarthquakeSource } from '../layers/earthquakes/source.js';
 import { createFirmsSource } from '../layers/firms/source.js';
-import { createInstallationSource } from '../layers/installations/source.js';
 import { createLaunchSource } from '../layers/launches/source.js';
 import { createWfigsPerimeterSource } from '../layers/perimeters/source.js';
 import { createRadioSource } from '../layers/radio/source.js';
-import { createBundledCableSource } from '../layers/submarineCables/bundledSource.js';
 import { searchHls } from '../layers/recentImagery/catalog.js';
 import { rankLatest, wvsSnapshotUrl } from '../layers/recentImagery/model.js';
 import { createSatelliteSource } from '../layers/satellites/source.js';
@@ -29,9 +27,7 @@ import { createWeatherSource } from '../layers/weather/source.js';
 import { createWindSource } from '../layers/wind/source.js';
 import { createApplicationRequestServices } from '../services/requests.js';
 import { createEventPackSource } from '../sources/eventPacks.js';
-import { createInfrastructureSource } from '../sources/infrastructureData.js';
 import {
-  createMilitarySource,
   createVesselSource,
   createFlightSource,
 } from '../sources/live/standalone.js';
@@ -41,7 +37,11 @@ import {
   createRouteService,
 } from './places.js';
 
-/** Construct every service Core's tools read. */
+/**
+ * Construct every service Core's tools read. OzEye is civilian-only: it
+ * supplies no military, installations, cables or infrastructure service, so
+ * the catalog does not offer the tools that require them.
+ */
 export function createToolServices({ fetchImpl, appUrl, panelKey }) {
   if (typeof fetchImpl !== 'function')
     throw new TypeError('A fetch implementation is required');
@@ -52,7 +52,6 @@ export function createToolServices({ fetchImpl, appUrl, panelKey }) {
     fires: createFirmsSource({ fetchImpl }),
     launches: createLaunchSource({ fetchImpl }),
     aircraft: createFlightSource({ fetchImpl }),
-    military: createMilitarySource({ fetchImpl }),
     vessels: createVesselSource({
       fetchImpl,
       origin: () => new URL(appUrl).origin,
@@ -72,9 +71,7 @@ export function createToolServices({ fetchImpl, appUrl, panelKey }) {
     weatherMaps: createWeatherSource({ fetchImpl }),
     wind: createWindSource({ fetchImpl }),
     imagery: createImageryService({ fetchImpl }),
-    cables: createBundledCableSource({ fetchImpl }),
     alpr: createAlprTileSource({ tileFetchImpl: fetchImpl }),
-    infrastructure: createInfrastructureSource({ fetchImpl }),
     events: createEventPackSource({ fetchImpl }),
     regional: requests.regional,
     terrain: requests.terrain,
@@ -82,10 +79,6 @@ export function createToolServices({ fetchImpl, appUrl, panelKey }) {
     features: requests.features,
     cyclones: createCycloneSource({ fetchImpl }),
     perimeters: createWfigsPerimeterSource({ fetchImpl }),
-    installations: createInstallationSource({
-      fetchImpl,
-      tileFetchImpl: fetchImpl,
-    }),
     places: createGeocodePlaceService({ fetchImpl }),
   };
 }

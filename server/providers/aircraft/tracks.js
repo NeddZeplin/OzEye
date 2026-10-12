@@ -1,16 +1,14 @@
 import { getOpenSkyToken } from './opensky.js';
 import { readCappedResponseText } from '../common/http.js';
+import { isMilitaryAircraft } from '../common/civilian.js';
 /**
- * Vite plugin: aircraft track-history backfill proxies (PRD WS-F F1/F2).
+ * Vite plugin: aircraft track-history backfill proxy (PRD WS-F F1/F2).
  *
  * /api/flights/track?icao24=<hex6> — OpenSky GET /tracks/all (experimental;
  *   own credit bucket, 4 credits per call on the free tier). OAuth via the
  *   shared coalesced token. 60s per-icao cache; 404/429 forwarded so the
- *   client can fall back to its accumulated trail silently.
- * /api/military/track?hex=<hex> — adsb.lol tar1090 readsb trace
- *   (undocumented but live; no browser CORS, hence this proxy). Up to ~24h
- *   of real history per aircraft. Treat as best-effort; data is ODbL —
- *   credit "adsb.lol (ODbL)" in the UI.
+ *   client can fall back to its accumulated trail silently. Military
+ *   aircraft answer 404 without an upstream request.
  */
 export function trackBackfillProxies() {
   const TRACK_CACHE_MS = 60000;
@@ -79,6 +77,12 @@ export function trackBackfillProxies() {
           );
           return;
         }
+        if (isMilitaryAircraft(icao24)) {
+          res.statusCode = 404;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Track not available' }));
+          return;
+        }
         const token = await getOpenSkyToken();
         await proxyJson(
           res,
@@ -90,32 +94,6 @@ export function trackBackfillProxies() {
         res.statusCode = 502;
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify({ error: 'OpenSky track fetch failed' }));
-      }
-    });
-
-    middlewares.use('/api/military/track', async (req, res) => {
-      try {
-        const incoming = new URL(req.url || '', 'http://localhost');
-        const hex = String(incoming.searchParams.get('hex') || '')
-          .trim()
-          .toLowerCase();
-        if (!/^[0-9a-f~]{6,7}$/.test(hex)) {
-          res.statusCode = 400;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(
-            JSON.stringify({ error: 'hex must be a 6-7 char hex string' }),
-          );
-          return;
-        }
-        await proxyJson(
-          res,
-          `lol:${hex}`,
-          `https://adsb.lol/data/traces/${hex.slice(-2)}/trace_full_${hex}.json`,
-        );
-      } catch (error) {
-        res.statusCode = 502;
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ error: 'adsb.lol trace fetch failed' }));
       }
     });
   }

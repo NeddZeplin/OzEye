@@ -33,7 +33,6 @@ export const TOOL_SURFACES = Object.freeze({
   find_vessel: voiceOff,
   get_earthquakes: voiceOff,
   get_active_fires: voiceOff,
-  find_infrastructure: voiceOff,
   satellites_overhead: voiceOff,
   // MCP leads with what the globe shows; assistants already search places,
   // plan routes and report weather, and these layers add little in a chat.
@@ -75,7 +74,7 @@ export function toolsForSurface(tools, surface, overrides = {}) {
 /**
  * A view of a composed catalog that lists and calls only the tools a surface
  * offers. Tools that combine others still reach the whole catalog, so a
- * composite such as military_awareness keeps its sections on every surface.
+ * composite such as situation_brief keeps its sections on every surface.
  */
 export function catalogForSurface(catalog, surface, overrides = {}) {
   const offered = new Set(

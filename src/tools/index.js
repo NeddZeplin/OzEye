@@ -10,14 +10,8 @@ import {
   getAircraftTrack,
 } from './queries/aviation.js';
 import { getWeatherMap, getWind } from './queries/atmosphere.js';
-import { findSubmarineCables } from './queries/cables.js';
+import { getHudCaption, situationBrief } from './queries/brief.js';
 import {
-  getHudCaption,
-  militaryAwareness,
-  situationBrief,
-} from './queries/brief.js';
-import {
-  findMilitaryInstallations,
   getCyclones,
   getFirePerimeters,
   getMapFeatures,
@@ -28,7 +22,6 @@ import {
 import { getBhoteKoshiFlood } from './queries/events.js';
 import { getActiveFires, getEarthquakes } from './queries/hazards.js';
 import { getRecentImagery } from './queries/imagery.js';
-import { findInfrastructure } from './queries/infrastructure.js';
 import {
   findVessel,
   getVesselTrack,
@@ -82,7 +75,11 @@ export {
   placeFromGeocodeResult,
 } from './places.js';
 
-/** Every query Core defines, in a stable order. */
+/**
+ * Every query Core offers, in a stable order. OzEye is civilian-only: the
+ * military awareness, military installation, submarine cable and
+ * infrastructure queries are not part of the catalog.
+ */
 export const coreTools = Object.freeze([
   getEarthquakes,
   getActiveFires,
@@ -110,17 +107,13 @@ export const coreTools = Object.freeze([
   getWeatherMap,
   getWind,
   getRecentImagery,
-  findSubmarineCables,
-  findInfrastructure,
   getBhoteKoshiFlood,
   getRegionalBrief,
   getCyclones,
   getFirePerimeters,
   getTerrainHeight,
-  findMilitaryInstallations,
   getMapFeatures,
   situationBrief,
-  militaryAwareness,
   getHudCaption,
   showInGodsEyeView,
   panelRequest,
