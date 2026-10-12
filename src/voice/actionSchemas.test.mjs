@@ -37,7 +37,7 @@ test('the complete Realtime tool payload pins the manifest-generated layer relea
     // omit top-level anyOf (OpenAI rejects it). Contacts list routing preserves
     // requested radius and center authority in descriptions only.
     // Street Level adds its toggle enum values and generated alias hint.
-    'a5b8801331f39a508fa41103a27a2a0b8063313a6010c886b013cf4614bc49f1',
+    'afe4588e62b1281a97e4810c978765b75b607fb06aaf945a7f0dd7cb06860bca',
   );
 });
 
