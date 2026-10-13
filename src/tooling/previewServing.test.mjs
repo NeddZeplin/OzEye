@@ -52,7 +52,7 @@ test('real dev and built-preview servers serve provider JSON and terminate unkno
     CCTV_FORCE_AUSTIN: '0',
     CCTV_SOURCES_FILE: path.join(root, 'absent.json'),
     CCTV_SOURCES_JSON: JSON.stringify([
-      { id: 'fixture', lat: 30.27, lon: -97.74 },
+      { id: 'fixture', lat: -33.87, lon: 151.21 },
     ]),
   })) {
     const before = process.env[name];

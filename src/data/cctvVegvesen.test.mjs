@@ -179,17 +179,6 @@ const withEnv = async (patch, fn) => {
   }
 };
 
-test('the Vegvesen lane is wired into the catalog', async (t) => {
-  await withEnv({}, async () => {
-    const { requested, sources } = await runCatalog(t);
-    assert.ok(requested.includes(DEFAULT_VEGVESEN_CCTV_URL));
-    assert.deepEqual(
-      sources.filter((s) => s.cityId === 'norway').map((s) => s.id),
-      ['no-vegvesen-3000063_1'],
-    );
-  });
-});
-
 test('CCTV_VEGVESEN_ENABLED=0 keeps the lane from being loaded', async (t) => {
   await withEnv({ CCTV_VEGVESEN_ENABLED: '0' }, async () => {
     const { requested, sources } = await runCatalog(t);

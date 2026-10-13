@@ -4,99 +4,24 @@ import { DEFAULT_CCTV_SOURCE_FILE, CCTV_SOURCE_CACHE_MS } from './constants.js';
 import { allocateSourceCap, resolveCatalogCap } from './cap.js';
 import { loadGroundHeights, joinGroundHeights } from './groundHeights.js';
 import { cameraRegion, normalizeSourceItem } from './normalize.js';
-import {
-  loadAustinSourcesFromOpenData,
-  loadCaltransSourcesFromOpenData,
-  loadTflSourcesFromOpenData,
-  loadOntarioSourcesFromOpenData,
-  loadFintrafficSourcesFromOpenData,
-  loadDriveBcSourcesFromOpenData,
-  loadTxdotSourcesFromOpenData,
-  loadTallinnSourcesFromCatalog,
-  loadTarkteeSourcesFromDatex,
-  loadWarendorfSourcesFromCatalog,
-  loadNswSourcesFromOpenData,
-  loadCalgarySourcesFromOpenData,
-  loadDelDOTSourcesFromOpenData,
-  loadVegvesenSourcesFromOpenData,
-} from './sources.js';
+import { loadNswSourcesFromOpenData } from './sources.js';
+import { isInAustralia } from '../../../src/sources/australia.js';
 
 /** Env kill switch: unset or anything but "0" means enabled. */
 const envEnabled = (name) => String(process.env[name] || '1').trim() !== '0';
 
 /**
- * Live open-data packs, in merge order. Adding a region is one entry here
- * plus its loader in sources.js; the catalog cap is shared across entries
- * round-robin (cap.js), so a new pack never silently evicts an older one.
- * Each pack fails independently (allSettled) and is gated by its own env
- * kill switch.
+ * Live open-data packs, in merge order. OzEye shows cameras in Australia
+ * only. Adding a region is one entry here plus its loader in sources.js; the
+ * catalog cap is shared across entries round-robin (cap.js), so a new pack
+ * never silently evicts an older one. Each pack fails independently
+ * (allSettled) and is gated by its own env kill switch.
  */
 const LIVE_PACKS = [
-  { name: 'austin', enabled: () => true, load: loadAustinSourcesFromOpenData },
-  {
-    name: 'caltrans',
-    enabled: () => true,
-    load: loadCaltransSourcesFromOpenData,
-  },
-  {
-    name: 'tfl',
-    enabled: () => envEnabled('CCTV_TFL_ENABLED'),
-    load: loadTflSourcesFromOpenData,
-  },
-  {
-    name: 'ontario',
-    enabled: () => envEnabled('CCTV_ONTARIO_ENABLED'),
-    load: loadOntarioSourcesFromOpenData,
-  },
-  {
-    name: 'fintraffic',
-    enabled: () => envEnabled('CCTV_FINTRAFFIC_ENABLED'),
-    load: loadFintrafficSourcesFromOpenData,
-  },
-  {
-    name: 'drivebc',
-    enabled: () => envEnabled('CCTV_DRIVEBC_ENABLED'),
-    load: loadDriveBcSourcesFromOpenData,
-  },
-  {
-    name: 'txdot',
-    enabled: () => envEnabled('CCTV_TXDOT_ENABLED'),
-    load: loadTxdotSourcesFromOpenData,
-  },
-  {
-    name: 'tallinn',
-    enabled: () => envEnabled('CCTV_TALLINN_ENABLED'),
-    load: loadTallinnSourcesFromCatalog,
-  },
-  {
-    name: 'tarktee',
-    enabled: () => envEnabled('CCTV_TARKTEE_ENABLED'),
-    load: loadTarkteeSourcesFromDatex,
-  },
-  {
-    name: 'warendorf',
-    enabled: () => envEnabled('CCTV_WARENDORF_ENABLED'),
-    load: loadWarendorfSourcesFromCatalog,
-  },
   {
     name: 'nsw',
     enabled: () => envEnabled('CCTV_NSW_ENABLED'),
     load: loadNswSourcesFromOpenData,
-  },
-  {
-    name: 'calgary',
-    enabled: () => envEnabled('CCTV_CALGARY_ENABLED'),
-    load: loadCalgarySourcesFromOpenData,
-  },
-  {
-    name: 'deldot',
-    enabled: () => envEnabled('CCTV_DELDOT_ENABLED'),
-    load: loadDelDOTSourcesFromOpenData,
-  },
-  {
-    name: 'vegvesen',
-    enabled: () => envEnabled('CCTV_VEGVESEN_ENABLED'),
-    load: loadVegvesenSourcesFromOpenData,
   },
 ];
 /**
@@ -106,6 +31,7 @@ const LIVE_PACKS = [
  */
 function loadSourcesFromFile(sourceRoot) {
   const sourceFile = process.env.CCTV_SOURCES_FILE || DEFAULT_CCTV_SOURCE_FILE;
+  if (!sourceFile) return [];
   const resolved = path.isAbsolute(sourceFile)
     ? sourceFile
     : path.resolve(sourceRoot, sourceFile);
@@ -191,15 +117,13 @@ export function createCctvCatalog({ sourceRoot = process.cwd() } = {}) {
     const fromFile = loadSourcesFromFile(sourceRoot);
     const fromEnv = loadSourcesFromEnv();
 
-    const forceAustin =
-      String(process.env.CCTV_FORCE_AUSTIN || '').trim() === '1';
-    const preferAustin =
-      String(process.env.CCTV_PREFER_AUSTIN || '1').trim() !== '0';
+    const forceLive = String(process.env.CCTV_FORCE_LIVE || '').trim() === '1';
+    const preferLive =
+      String(process.env.CCTV_PREFER_LIVE || '1').trim() !== '0';
     // Live open-data packs load unless a file/env pack is configured and live
-    // packs aren't forced — the same gate that governed the Austin-only fetch
-    // now governs every entry in LIVE_PACKS.
+    // packs aren't forced.
     const needsLiveSources =
-      forceAustin || (fromFile.length + fromEnv.length === 0 && preferAustin);
+      forceLive || (fromFile.length + fromEnv.length === 0 && preferLive);
     const liveResults = needsLiveSources
       ? await Promise.allSettled(
           // Invoked inside the promise so a loader that throws synchronously
@@ -219,7 +143,8 @@ export function createCctvCatalog({ sourceRoot = process.cwd() } = {}) {
       sources: items
         .filter((item) => item && typeof item === 'object')
         .map((item) => ({ ...normalizeSourceItem(item), pack: name }))
-        .filter((item) => item.id),
+        // Whatever supplied it, a camera outside Australia is never served.
+        .filter((item) => item.id && isInAustralia(item.lat, item.lon)),
       available: Number.isFinite(items.available)
         ? items.available
         : items.length,

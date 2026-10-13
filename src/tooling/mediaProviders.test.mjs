@@ -35,13 +35,13 @@ function fixture(t, id) {
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(path.join(root, 'config'));
   writeFileSync(
-    path.join(root, 'config/cctv_sources.austin.json'),
+    path.join(root, 'config/cctv_sources.json'),
     JSON.stringify([
       {
         id,
         name: '<Camera & test>',
-        lat: 30.27,
-        lon: -97.74,
+        lat: -33.87,
+        lon: 151.21,
         feedType: 'video',
       },
     ]),
@@ -110,8 +110,8 @@ for (const hook of ['configureServer', 'configurePreviewServer']) {
       {
         id: 'bounded',
         name: 'Test',
-        lat: 30,
-        lon: -97,
+        lat: -33.9,
+        lon: 151.2,
         feedType: 'video',
         url: 'https://camera.example.org/live.mp4',
       },
@@ -156,13 +156,13 @@ test('a failed CCTV media fetch reports a fixed health message, not the error te
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(path.join(root, 'config'));
   writeFileSync(
-    path.join(root, 'config/cctv_sources.austin.json'),
+    path.join(root, 'config/cctv_sources.json'),
     JSON.stringify([
       {
         id: 'leaky',
         name: 'Leaky camera',
-        lat: 30.27,
-        lon: -97.74,
+        lat: -33.87,
+        lon: 151.21,
         feedType: 'video',
         url: 'https://cams.fixture.invalid/leaky.m3u8',
       },

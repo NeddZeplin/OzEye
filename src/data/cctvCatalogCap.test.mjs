@@ -109,14 +109,14 @@ test('resolveCatalogCap bounds the env value and falls back to the default', () 
 test('the catalog applies the fair cap to configured packs end to end', async () => {
   const saved = { ...process.env };
   try {
-    process.env.CCTV_PREFER_AUSTIN = '0';
+    process.env.CCTV_PREFER_LIVE = '0';
     process.env.CCTV_SOURCES_FILE = '/nonexistent/cctv.json';
     process.env.CCTV_SOURCES_JSON = JSON.stringify(
       Array.from({ length: 12 }, (_, i) => ({
         id: `env-${i}`,
         name: `Env ${i}`,
-        lat: 30 + i * 0.01,
-        lon: -97,
+        lat: -33.9 + i * 0.01,
+        lon: 151.2,
         url: `https://example.test/${i}.jpg`,
       })),
     );
@@ -134,8 +134,8 @@ test('the catalog applies the fair cap to configured packs end to end', async ()
       { ...trimmed, region: undefined },
       { pack: 'env', available: 12, served: 9, region: undefined },
     );
-    assert.equal(trimmed.region.south, 30);
-    assert.ok(Math.abs(trimmed.region.north - 30.11) < 1e-9);
+    assert.equal(trimmed.region.south, -33.9);
+    assert.ok(Math.abs(trimmed.region.north - -33.79) < 1e-9);
   } finally {
     for (const key of Object.keys(process.env)) {
       if (!(key in saved)) delete process.env[key];
@@ -159,4 +159,65 @@ test('a pack trimmed to its nearest cameras reports how many it offered', async 
   );
   assert.equal(kept.available, 5);
   assert.deepEqual(kept.region, { west: 0, south: 0, east: 0, north: 4 });
+});
+
+test('a camera outside Australia is never served, whatever supplied it', async () => {
+  const saved = { ...process.env };
+  try {
+    process.env.CCTV_PREFER_LIVE = '0';
+    process.env.CCTV_SOURCES_FILE = '/nonexistent/cctv.json';
+    process.env.CCTV_SOURCES_JSON = JSON.stringify([
+      {
+        id: 'sydney',
+        lat: -33.87,
+        lon: 151.21,
+        url: 'https://example.test/s.jpg',
+      },
+      {
+        id: 'austin',
+        lat: 30.27,
+        lon: -97.74,
+        url: 'https://example.test/a.jpg',
+      },
+      {
+        id: 'auckland',
+        lat: -36.85,
+        lon: 174.76,
+        url: 'https://example.test/k.jpg',
+      },
+      { id: 'unplaced', url: 'https://example.test/u.jpg' },
+    ]);
+    const sources = await createCctvCatalog({ sourceRoot: '/nonexistent' })();
+    assert.deepEqual(
+      sources.map((source) => source.id),
+      ['sydney'],
+    );
+  } finally {
+    for (const key of Object.keys(process.env)) {
+      if (!(key in saved)) delete process.env[key];
+    }
+    Object.assign(process.env, saved);
+  }
+});
+
+test('only Australian camera providers are loaded live', async (t) => {
+  const saved = { ...process.env };
+  const requested = [];
+  t.mock.method(console, 'warn', () => {});
+  t.mock.method(console, 'log', () => {});
+  t.mock.method(globalThis, 'fetch', async (url) => {
+    requested.push(new URL(String(url)).hostname);
+    return Response.json({ features: [] });
+  });
+  try {
+    delete process.env.CCTV_SOURCES_JSON;
+    process.env.CCTV_SOURCES_FILE = '/nonexistent/cctv.json';
+    await createCctvCatalog({ sourceRoot: '/nonexistent' })();
+    assert.deepEqual(requested, ['data.livetraffic.com']);
+  } finally {
+    for (const key of Object.keys(process.env)) {
+      if (!(key in saved)) delete process.env[key];
+    }
+    Object.assign(process.env, saved);
+  }
 });

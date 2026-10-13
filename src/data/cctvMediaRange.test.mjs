@@ -108,8 +108,8 @@ test('inverted and unsafe-integer positions are dropped', () => {
 const CAMERA = {
   id: 'range-fixture',
   name: 'Range fixture',
-  lat: 30.27,
-  lon: -97.74,
+  lat: -33.87,
+  lon: 151.21,
   feedType: 'video',
   url: 'https://upstream.invalid/live.mp4',
 };

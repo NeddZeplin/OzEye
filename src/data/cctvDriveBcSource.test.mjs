@@ -177,50 +177,6 @@ test('DriveBC loader fails soft on HTTP errors, unexpected payloads and network 
   }
 });
 
-test('CCTV catalog merges DriveBC cameras and CCTV_DRIVEBC_ENABLED=0 skips the request', async (t) => {
-  quiet(t);
-  const sourceRoot = fs.mkdtempSync(
-    path.join(os.tmpdir(), 'gev-cctv-catalog-'),
-  );
-  t.after(() => fs.rmSync(sourceRoot, { recursive: true, force: true }));
-  withEnv(t, {
-    CCTV_SOURCES_FILE: undefined,
-    CCTV_SOURCES_JSON: undefined,
-    CCTV_FORCE_AUSTIN: undefined,
-    CCTV_PREFER_AUSTIN: undefined,
-    CCTV_MAX_SOURCES: undefined,
-    CCTV_CALTRANS_DISTRICTS: undefined,
-    CCTV_TFL_ENABLED: undefined,
-    CCTV_DRIVEBC_ENABLED: undefined,
-    CCTV_DRIVEBC_MAX_SOURCES: undefined,
-  });
-  const requested = [];
-  t.mock.method(globalThis, 'fetch', async (url) => {
-    requested.push(String(url));
-    // Every other live pack is down; only DriveBC answers.
-    return String(url) === DRIVEBC_WEBCAMS_URL
-      ? Response.json([driveBcRow(13, 49.001268, -122.756658)])
-      : new Response('unavailable', { status: 503 });
-  });
-
-  const sources = await createCctvCatalog({ sourceRoot })();
-  assert.deepEqual(
-    sources.map((source) => source.id),
-    ['drivebc-13'],
-  );
-  assert.equal(sources[0].url, 'https://www.drivebc.ca/images/13.jpg');
-
-  process.env.CCTV_DRIVEBC_ENABLED = '0';
-  requested.length = 0;
-  assert.deepEqual(await createCctvCatalog({ sourceRoot })(), []);
-  assert.ok(requested.length > 0, 'the other live packs still load');
-  assert.equal(
-    requested.includes(DRIVEBC_WEBCAMS_URL),
-    false,
-    'a disabled pack makes no request',
-  );
-});
-
 test('default per-pack camera caps fit inside the default catalog cap', () => {
   // Every default pack at its own cap (Warendorf ships 1 curated camera).
   const packs =

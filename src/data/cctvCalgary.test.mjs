@@ -336,30 +336,6 @@ const runCatalogWithMockedUpstreams = async (t) => {
   return { requested, sources };
 };
 
-test('the Calgary lane is wired into the catalog and its loader runs', async (t) => {
-  const saved = { ...process.env };
-  try {
-    delete process.env.CCTV_SOURCES_FILE;
-    delete process.env.CCTV_SOURCES_JSON;
-    delete process.env.CCTV_CALGARY_ENABLED;
-    const { requested, sources } = await runCatalogWithMockedUpstreams(t);
-    assert.ok(
-      requested.includes(DEFAULT_CALGARY_ROWS_URL),
-      'the catalog refresh invokes the Calgary loader',
-    );
-    assert.deepEqual(
-      sources.filter((s) => s.cityId === 'calgary').map((s) => s.id),
-      ['calgary-142', 'calgary-86'],
-      'Calgary cameras reach the served catalog through the registered lane',
-    );
-  } finally {
-    for (const key of Object.keys(process.env)) {
-      if (!(key in saved)) delete process.env[key];
-    }
-    Object.assign(process.env, saved);
-  }
-});
-
 test('CCTV_CALGARY_ENABLED=0 keeps the lane from being loaded at all', async (t) => {
   const saved = { ...process.env };
   try {
