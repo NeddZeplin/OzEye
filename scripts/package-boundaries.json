@@ -1287,6 +1287,32 @@
     ],
     "external": ["cesium"]
   },
+  "submarine-cables": {
+    "exports": ["./layers/submarine-cables"],
+    "modules": [
+      "src/layers/submarineCables/geometry.js",
+      "src/layers/submarineCables/index.js",
+      "src/layers/submarineCables/ingestion.js",
+      "src/layers/submarineCables/interaction.js",
+      "src/layers/submarineCables/lifecycle.js",
+      "src/layers/submarineCables/overlay.js",
+      "src/layers/submarineCables/policy.js",
+      "src/layers/submarineCables/rendering.js",
+      "src/layers/submarineCables/state.js",
+      "src/layers/submarineCables/surface.js",
+      "src/data/inputOwnership.js"
+    ],
+    "external": ["cesium"]
+  },
+  "bundled-cables": {
+    "exports": ["./sources/bundled-cables"],
+    "modules": [
+      "src/layers/submarineCables/bundledSource.js",
+      "src/data/local_data/telegeography_submarine_cables/cable-geo.json",
+      "src/data/local_data/telegeography_submarine_cables/landing-point-geo.json"
+    ],
+    "external": []
+  },
   "geography": {
     "exports": ["./geography/natural-earth", "./geography/neighborhoods"],
     "modules": [
@@ -1436,6 +1462,7 @@
       "src/app/layers/radio.js",
       "src/app/layers/rocketLaunches.js",
       "src/app/layers/satellites.js",
+      "src/app/layers/submarineCables.js",
       "src/app/layers/traffic.js",
       "src/app/operations.js",
       "src/app/scene.js",
@@ -1562,6 +1589,7 @@
       "src/data/scenePick.js",
       "src/data/spriteOrder.js",
       "src/data/surfaceServices.js",
+      "src/data/telegeographySubmarineCables.js",
       "src/data/terrainHeights.js",
       "src/data/tomtomTiles.js",
       "src/data/tr3bRegistry.js",
@@ -1756,6 +1784,17 @@
       "src/layers/satellites/state.js",
       "src/layers/satellites/testing.js",
       "src/layers/satellites/tracking.js",
+      "src/layers/submarineCables/bundledSource.js",
+      "src/layers/submarineCables/geometry.js",
+      "src/layers/submarineCables/index.js",
+      "src/layers/submarineCables/ingestion.js",
+      "src/layers/submarineCables/interaction.js",
+      "src/layers/submarineCables/lifecycle.js",
+      "src/layers/submarineCables/overlay.js",
+      "src/layers/submarineCables/policy.js",
+      "src/layers/submarineCables/rendering.js",
+      "src/layers/submarineCables/state.js",
+      "src/layers/submarineCables/surface.js",
       "src/layers/traffic/animation.js",
       "src/layers/traffic/controls.js",
       "src/layers/traffic/flow.js",
@@ -2221,6 +2260,7 @@
       "src/app/layers/radio.js",
       "src/app/layers/rocketLaunches.js",
       "src/app/layers/satellites.js",
+      "src/app/layers/submarineCables.js",
       "src/app/layers/traffic.js",
       "src/sources/sourceSlot.js",
       "src/cctvFocusRequest.js",
@@ -2468,6 +2508,16 @@
       "src/layers/satellites/state.js",
       "src/layers/satellites/testing.js",
       "src/layers/satellites/tracking.js",
+      "src/layers/submarineCables/geometry.js",
+      "src/layers/submarineCables/index.js",
+      "src/layers/submarineCables/ingestion.js",
+      "src/layers/submarineCables/interaction.js",
+      "src/layers/submarineCables/lifecycle.js",
+      "src/layers/submarineCables/overlay.js",
+      "src/layers/submarineCables/policy.js",
+      "src/layers/submarineCables/rendering.js",
+      "src/layers/submarineCables/state.js",
+      "src/layers/submarineCables/surface.js",
       "src/layers/traffic/animation.js",
       "src/layers/traffic/controls.js",
       "src/layers/traffic/flow.js",
@@ -3041,14 +3091,15 @@
     "external": ["@mapbox/vector-tile", "pbf"]
   },
   "reference-sources": {
-    "exports": ["./sources/reference"],
+    "exports": ["./sources/reference", "./layers/submarine-cables/source"],
     "modules": [
       "src/sources/reference.js",
       "src/layers/earthquakes/source.js",
       "src/layers/earthquakes/records.js",
       "src/sources/httpBody.js",
       "src/layers/perimeters/source.js",
-      "src/layers/perimeters/records.js"
+      "src/layers/perimeters/records.js",
+      "src/layers/submarineCables/bundledSource.js"
     ],
     "external": []
   },
@@ -3298,6 +3349,7 @@
       "src/layers/wind/model.js",
       "src/layers/wind/fields.js",
       "src/tools/queries/imagery.js",
+      "src/tools/queries/cables.js",
       "src/tools/queries/surveillance.js",
       "src/tools/queries/infrastructure.js",
       "src/tools/queries/events.js",
@@ -3395,6 +3447,7 @@
       "src/sources/windBody.js",
       "src/layers/recentImagery/catalog.js",
       "src/layers/recentImagery/model.js",
+      "src/layers/submarineCables/bundledSource.js",
       "src/layers/alpr/source.js",
       "src/layers/alpr/policy.js",
       "src/layers/alpr/records.js",

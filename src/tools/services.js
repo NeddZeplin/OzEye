@@ -18,6 +18,7 @@ import { createFirmsSource } from '../layers/firms/source.js';
 import { createLaunchSource } from '../layers/launches/source.js';
 import { createWfigsPerimeterSource } from '../layers/perimeters/source.js';
 import { createRadioSource } from '../layers/radio/source.js';
+import { createBundledCableSource } from '../layers/submarineCables/bundledSource.js';
 import { searchHls } from '../layers/recentImagery/catalog.js';
 import { rankLatest, wvsSnapshotUrl } from '../layers/recentImagery/model.js';
 import { createSatelliteSource } from '../layers/satellites/source.js';
@@ -40,8 +41,8 @@ import {
 
 /**
  * Construct every service Core's tools read. OzEye is civilian-only: it
- * supplies no military, installations or cables service, so the catalog does
- * not offer the tools that require them.
+ * supplies no military or installations service, so the catalog does not
+ * offer the tools that require them.
  */
 export function createToolServices({ fetchImpl, appUrl, panelKey }) {
   if (typeof fetchImpl !== 'function')
@@ -72,6 +73,7 @@ export function createToolServices({ fetchImpl, appUrl, panelKey }) {
     weatherMaps: createWeatherSource({ fetchImpl }),
     wind: createWindSource({ fetchImpl }),
     imagery: createImageryService({ fetchImpl }),
+    cables: createBundledCableSource({ fetchImpl }),
     alpr: createAlprTileSource({ tileFetchImpl: fetchImpl }),
     infrastructure: createInfrastructureSource({ fetchImpl }),
     events: createEventPackSource({ fetchImpl }),

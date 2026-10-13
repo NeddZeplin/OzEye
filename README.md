@@ -14,10 +14,9 @@ under `docs/` still describe the original.
   address blocks countries reserve for military use and by the public list of
   military airframes; vessels by their AIS ship type or a navy-style name. AIS
   is self-reported, so a vessel that broadcasts neither is not recognised.
-- **No military sites or submarine cables.** The submarine cables layer and
-  its dataset are removed. Military flights and mapped military installations
+- **No military sites.** Military flights and mapped military installations
   cannot be switched on and are being removed. Civilian infrastructure, such
-  as datacenters and dams, stays.
+  as datacenters, dams and submarine cables, stays.
 - **Opens over Australia.** The rest of the globe is still there to explore.
 
 ## Status
