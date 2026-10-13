@@ -3299,6 +3299,7 @@
       "src/layers/wind/fields.js",
       "src/tools/queries/imagery.js",
       "src/tools/queries/surveillance.js",
+      "src/tools/queries/infrastructure.js",
       "src/tools/queries/events.js",
       "src/data/bhoteKoshiFloodPath.js",
       "src/tools/functions.js",

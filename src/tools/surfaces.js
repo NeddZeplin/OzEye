@@ -33,6 +33,7 @@ export const TOOL_SURFACES = Object.freeze({
   find_vessel: voiceOff,
   get_earthquakes: voiceOff,
   get_active_fires: voiceOff,
+  find_infrastructure: voiceOff,
   satellites_overhead: voiceOff,
   // MCP leads with what the globe shows; assistants already search places,
   // plan routes and report weather, and these layers add little in a chat.

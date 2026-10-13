@@ -27,6 +27,7 @@ import { createWeatherSource } from '../layers/weather/source.js';
 import { createWindSource } from '../layers/wind/source.js';
 import { createApplicationRequestServices } from '../services/requests.js';
 import { createEventPackSource } from '../sources/eventPacks.js';
+import { createInfrastructureSource } from '../sources/infrastructureData.js';
 import {
   createVesselSource,
   createFlightSource,
@@ -39,8 +40,8 @@ import {
 
 /**
  * Construct every service Core's tools read. OzEye is civilian-only: it
- * supplies no military, installations, cables or infrastructure service, so
- * the catalog does not offer the tools that require them.
+ * supplies no military, installations or cables service, so the catalog does
+ * not offer the tools that require them.
  */
 export function createToolServices({ fetchImpl, appUrl, panelKey }) {
   if (typeof fetchImpl !== 'function')
@@ -72,6 +73,7 @@ export function createToolServices({ fetchImpl, appUrl, panelKey }) {
     wind: createWindSource({ fetchImpl }),
     imagery: createImageryService({ fetchImpl }),
     alpr: createAlprTileSource({ tileFetchImpl: fetchImpl }),
+    infrastructure: createInfrastructureSource({ fetchImpl }),
     events: createEventPackSource({ fetchImpl }),
     regional: requests.regional,
     terrain: requests.terrain,

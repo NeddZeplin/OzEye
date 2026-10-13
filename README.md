@@ -14,16 +14,17 @@ under `docs/` still describe the original.
   address blocks countries reserve for military use and by the public list of
   military airframes; vessels by their AIS ship type or a navy-style name. AIS
   is self-reported, so a vessel that broadcasts neither is not recognised.
-- **No sensitive infrastructure.** The submarine cables layer and its dataset
-  are removed. Military flights, mapped military installations, datacenters
-  and dams cannot be switched on and are being removed.
+- **No military sites or submarine cables.** The submarine cables layer and
+  its dataset are removed. Military flights and mapped military installations
+  cannot be switched on and are being removed. Civilian infrastructure, such
+  as datacenters and dams, stays.
 - **Opens over Australia.** The rest of the globe is still there to explore.
 
 ## Status
 
-Work in progress. Still to come: removing the remaining military and
-infrastructure code, limiting live data to Australia, and replacing the
-US-only weather, cyclone and fire feeds with Australian sources.
+Work in progress. Still to come: removing the remaining military code,
+limiting live data to Australia, and replacing the US-only weather, cyclone
+and fire feeds with Australian sources.
 
 ## Running it
 

@@ -22,6 +22,7 @@ import {
 import { getBhoteKoshiFlood } from './queries/events.js';
 import { getActiveFires, getEarthquakes } from './queries/hazards.js';
 import { getRecentImagery } from './queries/imagery.js';
+import { findInfrastructure } from './queries/infrastructure.js';
 import {
   findVessel,
   getVesselTrack,
@@ -77,8 +78,8 @@ export {
 
 /**
  * Every query Core offers, in a stable order. OzEye is civilian-only: the
- * military awareness, military installation, submarine cable and
- * infrastructure queries are not part of the catalog.
+ * military awareness, military installation and submarine cable queries are
+ * not part of the catalog.
  */
 export const coreTools = Object.freeze([
   getEarthquakes,
@@ -107,6 +108,7 @@ export const coreTools = Object.freeze([
   getWeatherMap,
   getWind,
   getRecentImagery,
+  findInfrastructure,
   getBhoteKoshiFlood,
   getRegionalBrief,
   getCyclones,

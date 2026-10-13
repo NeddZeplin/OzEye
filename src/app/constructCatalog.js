@@ -32,20 +32,6 @@ import { createBhoteKoshiEventLayer } from '../data/bhoteKoshiEvent.js';
 import { createBhoteKoshiLocatorLayer } from '../data/bhoteKoshiLocator.js';
 
 /**
- * OzEye is civilian-only. A withheld layer keeps its catalog identity, so
- * saved and shared state still decodes, but reports unavailable and so is
- * refused by the visibility lifecycle before it initializes or loads data.
- */
-function withheldLayer(layer) {
-  layer.getSourceAvailability = () => ({
-    available: false,
-    source: layer.id,
-    reason: `${layer.name || layer.id}: not available in OzEye`,
-  });
-  return layer;
-}
-
-/**
  * Hardware-local layers are registered like any other but never enter share
  * links or stored layer state: another browser cannot have this receiver.
  */
@@ -173,7 +159,7 @@ export function createApplicationCatalog({
           clock: weatherClock,
         }),
         createCyclonesLayer({ feed: sources.cyclones }),
-        ...createInfrastructureLayers(localGeoJsonServices).map(withheldLayer),
+        ...createInfrastructureLayers(localGeoJsonServices),
         createApplicationFirms({
           surface,
           id: 'local-firms',

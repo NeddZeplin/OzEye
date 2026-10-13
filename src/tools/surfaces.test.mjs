@@ -41,7 +41,6 @@ test('each surface offers the tools the table does not turn off', () => {
     'military_awareness',
     'find_military_installations',
     'find_submarine_cables',
-    'find_infrastructure',
   ])
     assert.ok(!names(coreTools).includes(name), name);
   assert.ok(!voice.includes('aircraft_in_area'));
