@@ -627,20 +627,11 @@ test('applyEvictionGrace with a full selection keeps no graced cards', () => {
   assert.deepEqual(result.evictIds, ['cam-extra']);
 });
 
-test('staticFrameRefreshMs follows known pack cadences and bounds explicit values', () => {
+test('staticFrameRefreshMs uses the default cadence and bounds explicit values', () => {
   assert.equal(
-    staticFrameRefreshMs({ provider: 'Austin Transportation & Public Works' }),
+    staticFrameRefreshMs({ provider: 'Live Traffic NSW' }),
     300_000,
   );
-  assert.equal(
-    staticFrameRefreshMs({ provider: 'Transport for London' }),
-    180_000,
-  );
-  assert.equal(staticFrameRefreshMs({ provider: 'Caltrans' }), 180_000);
-  assert.equal(staticFrameRefreshMs({ provider: 'Ontario 511' }), 180_000);
-  assert.equal(staticFrameRefreshMs({ provider: 'TxDOT' }), 180_000);
-  // Digitraffic publishes one weathercam frame per 600 s collection interval.
-  assert.equal(staticFrameRefreshMs({ provider: 'Fintraffic' }), 600_000);
   assert.equal(staticFrameRefreshMs({ frameRefreshMs: 5_000 }), 60_000);
   assert.equal(staticFrameRefreshMs({ frameRefreshMs: 3_000_000 }), 1_200_000);
   assert.equal(staticFrameRefreshMs({ provider: 'Unknown Provider' }), 300_000);

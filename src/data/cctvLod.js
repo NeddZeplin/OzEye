@@ -27,18 +27,8 @@ export const CCTV_AMBIENT_CARD_MIN = 20;
 const STREET_HEIGHT_M = 2_500;
 const CITY_HEIGHT_M = 15_000;
 const DEFAULT_STATIC_REFRESH_MS = 5 * 60 * 1000;
-const PROVIDER_STATIC_REFRESH_MS = Object.freeze({
-  'austin transportation & public works': 5 * 60 * 1000,
-  'transport for london': 3 * 60 * 1000,
-  caltrans: 3 * 60 * 1000,
-  'ontario 511': 3 * 60 * 1000,
-  // TxDOT publishes roughly once a minute; 3 min matches the other highway packs.
-  txdot: 3 * 60 * 1000,
-  // Digitraffic publishes a new weathercam frame on each station's
-  // collectionInterval, 600 s for every station sampled; polling faster only
-  // re-fetches the same JPEG.
-  fintraffic: 10 * 60 * 1000,
-});
+/** Per-provider refresh interval overrides, keyed by lowercase provider name. */
+const PROVIDER_STATIC_REFRESH_MS = Object.freeze({});
 
 /**
  * Returns the bounded ambient-card budget for the current viewer height.
