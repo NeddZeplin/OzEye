@@ -9,6 +9,16 @@ import {
   civilianStatesBody,
   prepareCivilianFilter,
 } from '../common/civilian.js';
+import {
+  AUSTRALIA_COVERAGE,
+  australianAdsbPayload,
+  australianStatesBody,
+} from '../common/region.js';
+import { AUSTRALIA_REQUEST_BOUNDS } from '../../../src/sources/australia.js';
+
+/** What every flights response contains: civilian aircraft over Australia. */
+const servedStatesBody = (body) =>
+  civilianStatesBody(australianStatesBody(body));
 // ---------------------------------------------------------------------------
 // OpenSky OAuth2 token + response cache state
 // ---------------------------------------------------------------------------
@@ -32,8 +42,12 @@ let _openskyCacheSourceEpochMs = null;
 const OPENSKY_CACHE_MS = 9000;
 /** Per-attempt limit for the global snapshot; it normally arrives in ~1.5 s. */
 const OPENSKY_ATTEMPT_TIMEOUT_MS = 10_000;
+// Only the box around Australia is requested; `servedStatesBody` then keeps
+// what lies inside the area itself.
 const OPENSKY_STATES_URL =
-  'https://opensky-network.org/api/states/all?extended=1';
+  'https://opensky-network.org/api/states/all?extended=1' +
+  `&lamin=${AUSTRALIA_REQUEST_BOUNDS.south}&lomin=${AUSTRALIA_REQUEST_BOUNDS.west}` +
+  `&lamax=${AUSTRALIA_REQUEST_BOUNDS.north}&lomax=${AUSTRALIA_REQUEST_BOUNDS.east}`;
 
 /**
  * Fetch and read the global snapshot, giving each attempt
@@ -249,6 +263,7 @@ function buildOpenSkyHeaders({
     'X-OpenSky-Auth-Mode-Requested': requestedMode,
     'X-OpenSky-Auth-Mode-Used': usedMode,
     'X-OpenSky-Auth-Reason': reason,
+    'X-Flight-Coverage': AUSTRALIA_COVERAGE,
   };
   // Credit-governor extras (field-test fix 2026-07-06): the client can show a
   // STALE cue / countdown without parsing the body.
@@ -307,7 +322,7 @@ async function fetchAdsbLolPointFallback(req) {
           ADSBLOL_POINT_MAX_RESPONSE_BYTES,
         );
         const normalized = normalizeAdsbLolPointResponse(
-          civilianAdsbPayload(payload),
+          civilianAdsbPayload(australianAdsbPayload(payload)),
         );
         const record = {
           body: JSON.stringify(normalized),
@@ -347,10 +362,10 @@ async function serveAdsbLolPointFallback(req, res, requestedMode, reason) {
       reason,
     }),
     'X-Flight-Source': 'adsb.lol',
-    'X-Flight-Coverage': `${ADSBLOL_POINT_RADIUS_NM}nm regional fallback`,
+    'X-Flight-Coverage': `${ADSBLOL_POINT_RADIUS_NM}nm regional fallback, ${AUSTRALIA_COVERAGE}`,
     'X-Flight-Count': String(fallback.count),
   });
-  res.end(civilianStatesBody(fallback.body));
+  res.end(servedStatesBody(fallback.body));
   return true;
 }
 
@@ -442,7 +457,7 @@ export function openSkyProxy() {
                 : undefined,
             }),
           );
-          res.end(civilianStatesBody(_openskyCacheBody));
+          res.end(servedStatesBody(_openskyCacheBody));
           return;
         }
         // Cooling down with nothing cached (cold start into a rate limit):
@@ -581,7 +596,7 @@ export function openSkyProxy() {
                 retryAfterSeconds: cooldownMs / 1000,
               }),
             );
-            res.end(civilianStatesBody(_openskyCacheBody));
+            res.end(servedStatesBody(_openskyCacheBody));
             return;
           }
         }
@@ -682,7 +697,7 @@ export function openSkyProxy() {
             reason,
           }),
         );
-        res.end(civilianStatesBody(body));
+        res.end(servedStatesBody(body));
       } catch (e) {
         console.error('[OpenSky Proxy]', e.message);
         if (_openskyCacheBody) {
@@ -703,7 +718,7 @@ export function openSkyProxy() {
               reason: cachedMeta.reason || 'cached_stale',
             }),
           );
-          res.end(civilianStatesBody(_openskyCacheBody));
+          res.end(servedStatesBody(_openskyCacheBody));
           return;
         }
         const requestedMode = normalizeOpenSkyAuthMode(
